@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard | Golden Pixel</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid rgba(212,175,55,0.2); padding: 10px; text-align: left; }
+        th { color: var(--gold); }
+    </style>
+</head>
+<body>
+    <div id="loginSection" class="container text-center" style="max-width: 400px; margin-top: 100px;">
+        <div class="glass" style="padding: 40px;">
+            <h2 class="gold-text">অ্যাডমিন লগিন</h2>
+            <input type="password" id="adminPass" placeholder="পাসওয়ার্ড দিন">
+            <button class="btn-primary w-100 mt-20" id="loginBtn">প্রবেশ করুন</button>
+        </div>
+    </div>
+
+    <div id="dashboardSection" class="container" style="display: none; padding: 50px;">
+        <h2 class="gold-text">অর্ডার লিস্ট</h2>
+        <div class="glass" style="overflow-x: auto; padding: 20px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Method</th>
+                        <th>TrxID</th>
+                        <th>Status Update</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from "./firebase-config.js";
+        import { collection, getDocs, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        document.getElementById("loginBtn").addEventListener("click", () => {
+            if(document.getElementById("adminPass").value === "pixeladmin2026") {
+                document.getElementById("loginSection").style.display = "none";
+                document.getElementById("dashboardSection").style.display = "block";
+                loadOrders();
+            } else {
+                alert("ভুল পাসওয়ার্ড!");
+            }
+        });
+
+        async function loadOrders() {
+            const tbody = document.getElementById("tableBody");
+            const snap = await getDocs(collection(db, "orders"));
+            tbody.innerHTML = "";
+            snap.forEach(docSnap => {
+                const order = docSnap.data();
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${order.orderID}</td>
+                    <td>${order.name}</td>
+                    <td>${order.paymentMethod}</td>
+                    <td>${order.trxID}</td>
+                    <td>
+                        <select style="background: black; padding: 5px;" onchange="window.updateStatus('${docSnap.id}', this.value)">
+                            <option value="Payment Pending" ${order.status === 'Payment Pending' ? 'selected' : ''}>Payment Pending</option>
+                            <option value="Processing" ${order.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                            <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    </td>
+                    <td><button style="background: red; color: white; padding: 5px;" onclick="window.delOrder('${docSnap.id}')">Delete</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.updateStatus = async (id, val) => { await updateDoc(doc(db, "orders", id), { status: val }); alert("Status Updated"); }
+        window.delOrder = async (id) => { await deleteDoc(doc(db, "orders", id)); loadOrders(); }
+    </script>
+</body>
+</html>

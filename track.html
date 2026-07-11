@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <title>Track Order | Golden Pixel Agency</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+    
+    <div class="container glass text-center" style="max-width: 550px; padding: 40px;">
+        <h2 class="gold-text">অর্ডার ট্র্যাক করুন</h2>
+        <p style="margin-bottom: 20px; color: #ccc;">আপনার অর্ডার আইডি দিন (যেমন: GP-123456)</p>
+        
+        <input type="text" id="trackInput" placeholder="এখানে অর্ডার আইডি দিন">
+        <button class="btn-primary w-100" id="searchTrackBtn">সার্চ করুন</button>
+        
+        <div id="trackResult" class="mt-20"></div>
+        <br>
+        <a href="index.html" style="color: var(--gold); text-decoration: none;">হোম পেজে ফিরে যান</a>
+    </div>
+
+    <script type="module">
+        import { db } from "./firebase-config.js";
+        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        document.getElementById("searchTrackBtn").addEventListener("click", async () => {
+            const inputVal = document.getElementById("trackInput").value.trim();
+            const resultBox = document.getElementById("trackResult");
+            if(!inputVal) return;
+            
+            resultBox.innerHTML = "<p>খোঁজা হচ্ছে...</p>";
+            
+            try {
+                const q = query(collection(db, "orders"), where("orderID", "==", inputVal));
+                const querySnapshot = await getDocs(q);
+                
+                if(querySnapshot.empty) {
+                    resultBox.innerHTML = "<p style='color: red;'>এই আইডি দিয়ে কোনো অর্ডার পাওয়া যায়নি!</p>";
+                } else {
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        resultBox.innerHTML = `
+                            <div class="glass" style="padding: 20px; text-align: left;">
+                                <h3 class="gold-text" style="text-align: center;">স্ট্যাটাস: ${data.status}</h3>
+                                <p>নাম: ${data.name}</p>
+                                <p>প্যাকেজ: Facebook 300K Views Challenge</p>
+                            </div>
+                        `;
+                    });
+                }
+            } catch (err) {
+                resultBox.innerHTML = "<p style='color: red;'>সার্ভার এরর!</p>";
+            }
+        });
+    </script>
+</body>
+</html>
